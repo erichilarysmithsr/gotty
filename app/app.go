@@ -17,6 +17,10 @@ import (
 )
 
 type App struct {
+	options Options
+}
+
+type Options struct {
 	Address     string
 	Port        string
 	PermitWrite bool
@@ -24,13 +28,9 @@ type App struct {
 	Command     []string
 }
 
-func New(address string, port string, permitWrite bool, cred string, command []string) *App {
+func New(options Options) *App {
 	return &App{
-		Address:     address,
-		Port:        port,
-		PermitWrite: permitWrite,
-		Credential:  cred,
-		Command:     command,
+		options: options,
 	}
 }
 
@@ -72,12 +72,12 @@ func (app *App) Run() error {
 	)
 	http.HandleFunc("/ws", app.generateHandler())
 
-	url := app.Address + ":" + app.Port
-	log.Printf("Server is running at %s, command: %s", url, strings.Join(app.Command, " "))
+	url := app.options.Address + ":" + app.options.Port
+	log.Printf("Server is running at %s, command: %s", url, strings.Join(app.options.Command, " "))
 	handler := http.Handler(http.DefaultServeMux)
 	handler = loggerHandler(handler)
-	if app.Credential != "" {
-		handler = basicAuthHandler(handler, app.Credential)
+	if app.options.Credential != "" {
+		handler = basicAuthHandler(handler, app.options.Credential)
 	}
 	err := http.ListenAndServe(url, handler)
 	if err != nil {
@@ -108,7 +108,7 @@ func (app *App) generateHandler() func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		cmd := exec.Command(app.Command[0], app.Command[1:]...)
+		cmd := exec.Command(app.options.Command[0], app.options.Command[1:]...)
 		fio, err := pty.Start(cmd)
 		log.Printf("Command is running for client %s with PID %d", r.RemoteAddr, cmd.Process.Pid)
 		if err != nil {
@@ -152,7 +152,7 @@ func (app *App) generateHandler() func(w http.ResponseWriter, r *http.Request) {
 
 				switch data[0] {
 				case '0':
-					if !app.PermitWrite {
+					if !app.options.PermitWrite {
 						break
 					}
 

@@ -44,7 +44,15 @@ func main() {
 			cli.ShowAppHelp(c)
 			os.Exit(1)
 		}
-		app := app.New(c.String("addr"), c.String("port"), c.Bool("permit-write"), c.String("credential"), c.Args())
+		app := app.New(
+			app.Options{
+				c.String("addr"),
+				c.String("port"),
+				c.Bool("permit-write"),
+				c.String("credential"),
+				c.Args(),
+			},
+		)
 		err := app.Run()
 		if err != nil {
 			fmt.Println(err)
